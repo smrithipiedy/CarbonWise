@@ -1,0 +1,13 @@
+.git
+**/.git
+**/.cursor
+**/terminals
+**/agent-transcripts
+**/node_modules
+**/.env
+**/.env.local
+backend/.env
+frontend/dist
+backend/dist
+**/*.log
+**/.DS_Store

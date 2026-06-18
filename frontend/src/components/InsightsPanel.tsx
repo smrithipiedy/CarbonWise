@@ -97,7 +97,7 @@ export default function InsightsPanel({
 
       <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-5 shrink-0">Targeted Reduction Plan</h3>
 
-      <div className="flex-1 overflow-y-auto pr-1 max-h-[680px]">
+      <div className="flex-1 overflow-y-auto pr-1 min-h-0">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" role="list" aria-label="Reduction recommendations">
           {recommendations.map((act, i) => {
             const categoryKey =

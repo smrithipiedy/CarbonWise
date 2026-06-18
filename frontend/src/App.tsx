@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import LandingPage from './pages/LandingPage';
-import ResultsPage from './pages/ResultsPage';
 import { useCarbonStore } from './store/useCarbonStore';
+
+const LandingPage = lazy(() => import('./pages/LandingPage'));
+const ResultsPage = lazy(() => import('./pages/ResultsPage'));
 
 function SkipLink() {
   return (
@@ -82,10 +83,12 @@ function AppRoutes() {
       <GeminiStatusBanner />
       <Navbar />
       <main id="main-content" className="flex-1" tabIndex={-1}>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/results" element={<ResultsPage />} />
-        </Routes>
+        <Suspense fallback={<div className="flex justify-center items-center min-h-[50vh]"><div className="animate-spin h-8 w-8 border-4 border-eco-500 border-t-transparent rounded-full"></div></div>}>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/results" element={<ResultsPage />} />
+          </Routes>
+        </Suspense>
       </main>
       <footer className="py-6 text-center text-sm text-slate-500" role="contentinfo">
         <p>© 2026 CarbonWise — Track your impact, change the world 🌿</p>

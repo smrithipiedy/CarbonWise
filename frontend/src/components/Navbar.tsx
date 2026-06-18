@@ -36,7 +36,7 @@ export default function Navbar() {
         </Link>
 
         {/* Navigation Links */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" role="navigation" aria-label="Site pages">
           <a
             href="#calculator-section"
             onClick={handleCalculatorClick}

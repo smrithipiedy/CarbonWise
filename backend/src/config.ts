@@ -6,7 +6,7 @@ export const ENV = process.env.NODE_ENV || process.env.ENV || 'development';
 export const CORS_ORIGIN = process.env.CORS_ORIGIN || '';
 
 // Google Cloud Settings
-export const PROJECT_ID = process.env.PROJECT_ID || 'virtual-prompt-week-3';
+export const PROJECT_ID = process.env.PROJECT_ID || 'gen-lang-client-0027231059';
 export const REGION = process.env.REGION || 'us-central1';
 
 // Auto-enable Gemini when an API key is present (USE_GEMINI=false can still explicitly disable)

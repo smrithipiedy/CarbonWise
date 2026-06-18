@@ -1,4 +1,6 @@
 import * as admin from 'firebase-admin';
+import * as fs from 'fs';
+import * as path from 'path';
 import { USE_FIRESTORE, PROJECT_ID } from './config';
 import type { FootprintInputs } from './carbon/engine';
 
@@ -11,7 +13,8 @@ export interface Entry {
   date: string;
 }
 
-const inMemoryEntries: Entry[] = [];
+const LOCAL_DB_PATH = path.join(process.cwd(), 'local_db.json');
+let inMemoryEntries: Entry[] = [];
 
 if (USE_FIRESTORE) {
   try {
@@ -22,10 +25,30 @@ if (USE_FIRESTORE) {
     }
     console.log('🟢 Connecting to Google Cloud Firestore in native mode (firebase-admin)');
   } catch (e) {
-    console.warn(`⚠️ Firestore initialization failed: ${e}. Falling back to in-memory mode.`);
+    console.warn(`⚠️ Firestore initialization failed: ${e}. Falling back to local file mode.`);
   }
 } else {
-  console.log('🟢 Offline Mode: Initializing in-memory storage');
+  console.log('🟢 Offline Mode: Initializing local file storage');
+}
+
+// Load initial data
+if (!USE_FIRESTORE || admin.apps.length === 0) {
+  try {
+    if (fs.existsSync(LOCAL_DB_PATH)) {
+      const data = fs.readFileSync(LOCAL_DB_PATH, 'utf-8');
+      inMemoryEntries = JSON.parse(data);
+    }
+  } catch (e) {
+    console.warn('⚠️ Failed to load local db:', e);
+  }
+}
+
+function saveLocalDB() {
+  try {
+    fs.writeFileSync(LOCAL_DB_PATH, JSON.stringify(inMemoryEntries, null, 2));
+  } catch (e) {
+    console.error('❌ Failed to save local db:', e);
+  }
 }
 
 export const dbRepository = {
@@ -34,6 +57,7 @@ export const dbRepository = {
       await admin.firestore().collection('entries').doc(entry.id).set(entry);
     } else {
       inMemoryEntries.push(entry);
+      saveLocalDB();
     }
   },
 
@@ -77,6 +101,7 @@ export const dbRepository = {
         count++;
       }
     }
+    if (count > 0) saveLocalDB();
     return count;
   },
 
@@ -96,6 +121,7 @@ export const dbRepository = {
     const idx = inMemoryEntries.findIndex((e) => e.id === entryId && e.deviceId === deviceId);
     if (idx === -1) return false;
     inMemoryEntries.splice(idx, 1);
+    saveLocalDB();
     return true;
   },
 };

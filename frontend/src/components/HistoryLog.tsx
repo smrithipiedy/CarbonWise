@@ -43,24 +43,11 @@ export default function HistoryLog({
 
   return (
     <section className="card p-6 animate-fade-in-up" aria-labelledby="history-title">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center mb-4">
         <div className="flex items-center gap-2">
           <h2 id="history-title" className="text-base font-bold text-slate-900">Your history</h2>
           <span className="badge badge-eco">{history.length} entries</span>
         </div>
-        {hasCalculatedThisSession &&
-          (saved ? (
-            <span className="inline-flex items-center gap-1 text-xs font-bold text-eco-700 bg-eco-50 border border-eco-200 px-2.5 py-1 rounded-lg">
-              ✓ Saved
-            </span>
-          ) : (
-            <button
-              onClick={saveToHistory}
-              className="px-3.5 py-1.5 rounded-lg bg-eco-600 hover:bg-eco-500 text-white font-bold text-xs transition-all shadow-sm cursor-pointer focus-visible:ring-2 focus-visible:ring-eco-500 focus-visible:ring-offset-2"
-            >
-              Save Current
-            </button>
-          ))}
       </div>
 
       {trendText && (

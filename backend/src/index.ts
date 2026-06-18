@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
+import compression from 'compression';
 import carbonRouter from './routes/carbon';
 import { PORT, ENV, CORS_ORIGIN } from './config';
 import { securityHeaders, requireJsonContentType } from './middleware/security';
@@ -17,6 +18,7 @@ const corsOptions: cors.CorsOptions =
     : { origin: ['http://localhost:3000', 'http://127.0.0.1:3000'], credentials: false };
 
 app.use(securityHeaders);
+app.use(compression());
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '1mb' }));
 app.use('/api', requireJsonContentType, carbonRouter);

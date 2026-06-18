@@ -114,13 +114,13 @@ export default function ResultsPage() {
           <section className="card-gradient-border p-6 sm:p-8 animate-fade-in-up">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Your estimated footprint</p>
-                <h1 id="res-title" className={`stat-value text-5xl sm:text-6xl font-extrabold tracking-tight animate-count-up ${
+                <h2 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Your annual footprint</h2>
+                <div id="res-title" className={`stat-value text-5xl sm:text-6xl font-extrabold tracking-tight animate-count-up ${
                   totalTonnes <= 2.0 ? 'text-emerald-500' : totalTonnes <= 4.8 ? 'text-amber-500' : 'text-rose-500'
                 }`}>
                   {totalTonnes.toFixed(2)}
                   <span className="text-2xl sm:text-3xl ml-1 font-bold text-slate-800">t CO₂e</span>
-                </h1>
+                </div>
                 <p className="sr-only">{footprintLevel}</p>
                 <p className="text-sm text-slate-500 font-medium mt-1">per year</p>
                 <div className="separator my-4" />
@@ -169,6 +169,21 @@ export default function ResultsPage() {
             </div>
           </section>
 
+          {hasCalculatedThisSession && !saved && (
+            <button
+              onClick={saveToHistory}
+              className="w-full px-6 py-4 rounded-xl bg-eco-600 hover:bg-eco-500 text-white font-bold text-base transition-all shadow-sm cursor-pointer focus-visible:ring-2 focus-visible:ring-eco-500 focus-visible:ring-offset-2 animate-fade-in-up"
+            >
+              Save Current Entry
+            </button>
+          )}
+          {hasCalculatedThisSession && saved && (
+            <div className="w-full px-6 py-4 rounded-xl bg-eco-50 border border-eco-200 text-eco-700 font-bold text-base text-center animate-fade-in-up flex items-center justify-center gap-2">
+              <span className="w-5 h-5 rounded-full bg-eco-200 text-eco-700 flex items-center justify-center text-xs">✓</span>
+              Saved
+            </div>
+          )}
+
           {/* History Component refactored out for modularity */}
           <HistoryLog 
             history={history} 
@@ -181,7 +196,7 @@ export default function ResultsPage() {
         </div>
 
         {/* ─── Right Column: Personalized Insights ─── */}
-        <div className="lg:col-span-1 h-full">
+        <div className="lg:col-span-1 min-h-0">
           <InsightsPanel
             insights={insights}
             summary={summary}

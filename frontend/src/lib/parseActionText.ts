@@ -1,6 +1,6 @@
 /** Parses AI action strings into heading, status badge, and detail text. */
 export function parseActionText(action: string) {
-  const emojiRegex = /^\s*([\uD800-\uDBFF][\uDC00-\uDFFF]|\S)\s*/;
+  const emojiRegex = /^\s*(\p{Emoji_Presentation}|\p{Emoji}\uFE0F|\p{Extended_Pictographic})\s*/u;
   const matchEmoji = action.match(emojiRegex);
   const emoji = matchEmoji ? matchEmoji[1] : '';
   const cleanAction = action.replace(emojiRegex, '').trim();
