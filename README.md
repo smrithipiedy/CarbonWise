@@ -1,4 +1,4 @@
-# 🌱 Carbon Footprint Awareness Platform
+# 🌱 CarbonWise - Carbon Footprint Awareness Platform
 
 A web application that helps individuals understand, track, and reduce their personal carbon footprint through simple inputs and personalized, AI-generated insights.
 
