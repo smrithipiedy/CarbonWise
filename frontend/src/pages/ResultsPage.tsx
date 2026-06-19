@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCarbonStore } from '../store/useCarbonStore';
+import { PARIS_SUSTAINABLE_ANNUAL_TARGET, GLOBAL_AVERAGE_ANNUAL } from '@carbonwise/shared';
 
 import ComparisonCard, { CATS } from '../components/ComparisonCard';
 import HistoryLog from '../components/HistoryLog';
@@ -51,10 +52,7 @@ export default function ResultsPage() {
             <HistoryLog 
               history={history} 
               summary={summary} 
-              hasCalculatedThisSession={hasCalculatedThisSession} 
-              saved={saved}
               selectedEntryId={selectedEntryId}
-              saveToHistory={saveToHistory} 
               selectHistoryEntry={selectHistoryEntry} 
             />
           </div>
@@ -82,11 +80,13 @@ export default function ResultsPage() {
     );
   }
 
+  const SUSTAINABLE_TARGET_TONNES = PARIS_SUSTAINABLE_ANNUAL_TARGET / 1000;
+  const GLOBAL_AVG_TONNES = GLOBAL_AVERAGE_ANNUAL / 1000;
   const totalTonnes = summary.totalEmission / 1000;
-  const targetX = (totalTonnes / 2.0).toFixed(1);
-  const avgX = (totalTonnes / 4.8).toFixed(1);
+  const targetX = (totalTonnes / SUSTAINABLE_TARGET_TONNES).toFixed(1);
+  const avgX = (totalTonnes / GLOBAL_AVG_TONNES).toFixed(1);
   const footprintLevel =
-    totalTonnes <= 2.0 ? 'Within sustainable target' : totalTonnes <= 4.8 ? 'Above sustainable target' : 'Well above global average';
+    totalTonnes <= SUSTAINABLE_TARGET_TONNES ? 'Within sustainable target' : totalTonnes <= GLOBAL_AVG_TONNES ? 'Above sustainable target' : 'Well above global average';
 
   const categories = Object.keys(CATS).map((key) => {
     const cat = CATS[key];
@@ -105,6 +105,7 @@ export default function ResultsPage() {
 
   return (
     <main className="max-w-7xl mx-auto px-6 py-12 animate-fade-in" aria-labelledby="res-title">
+      <h1 id="res-title" className="sr-only">Carbon Footprint Results</h1>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
         
         {/* ─── Left Column: Numerical Metrics, Charts, Log ─── */}
@@ -115,8 +116,8 @@ export default function ResultsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
               <div>
                 <h2 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Your annual footprint</h2>
-                <div id="res-title" className={`stat-value text-5xl sm:text-6xl font-extrabold tracking-tight animate-count-up ${
-                  totalTonnes <= 2.0 ? 'text-emerald-500' : totalTonnes <= 4.8 ? 'text-amber-500' : 'text-rose-500'
+            <div id="footprint-hero" className={`stat-value text-5xl sm:text-6xl font-extrabold tracking-tight animate-count-up ${
+                  totalTonnes <= SUSTAINABLE_TARGET_TONNES ? 'text-emerald-500' : totalTonnes <= GLOBAL_AVG_TONNES ? 'text-amber-500' : 'text-rose-500'
                 }`}>
                   {totalTonnes.toFixed(2)}
                   <span className="text-2xl sm:text-3xl ml-1 font-bold text-slate-800">t CO₂e</span>
@@ -125,8 +126,8 @@ export default function ResultsPage() {
                 <p className="text-sm text-slate-500 font-medium mt-1">per year</p>
                 <div className="separator my-4" />
                 <p className="text-sm text-slate-600 leading-relaxed font-medium">
-                  That is <strong className="text-slate-800">{targetX}×</strong> the sustainable target (2.0 t) and{' '}
-                  <strong className="text-slate-800">{avgX}×</strong> the global average (4.8 t).
+                  That is <strong className="text-slate-800">{targetX}×</strong> the sustainable target ({SUSTAINABLE_TARGET_TONNES} t) and{' '}
+                  <strong className="text-slate-800">{avgX}×</strong> the global average ({GLOBAL_AVG_TONNES} t).
                 </p>
               </div>
 
@@ -188,9 +189,7 @@ export default function ResultsPage() {
           <HistoryLog 
             history={history} 
             summary={summary} 
-            hasCalculatedThisSession={hasCalculatedThisSession} 
-            saved={saved} 
-            saveToHistory={saveToHistory} 
+            selectedEntryId={selectedEntryId}
             selectHistoryEntry={selectHistoryEntry} 
           />
         </div>

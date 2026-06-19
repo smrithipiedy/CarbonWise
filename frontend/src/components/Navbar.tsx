@@ -36,11 +36,10 @@ export default function Navbar() {
         </Link>
 
         {/* Navigation Links */}
-        <div className="flex items-center gap-2" role="navigation" aria-label="Site pages">
+        <div className="flex items-center gap-2">
           <a
             href="#calculator-section"
             onClick={handleCalculatorClick}
-            aria-current={location.pathname === '/' ? 'page' : undefined}
             className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-eco-500 focus-visible:ring-offset-2"
           >
             Calculator

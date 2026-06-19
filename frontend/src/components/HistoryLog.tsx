@@ -4,8 +4,6 @@ import type { HistoryEntry, FootprintResponse } from '../services/api';
 interface HistoryLogProps {
   history: HistoryEntry[];
   summary: FootprintResponse | null;
-  hasCalculatedThisSession: boolean;
-  saved: boolean;
   selectedEntryId: string | null;
   saveToHistory: () => void;
   selectHistoryEntry: (entry: HistoryEntry) => void;
@@ -14,10 +12,7 @@ interface HistoryLogProps {
 export default function HistoryLog({
   history,
   summary,
-  hasCalculatedThisSession,
-  saved,
   selectedEntryId,
-  saveToHistory,
   selectHistoryEntry,
 }: HistoryLogProps) {
   let trendText: { text: string; positive: boolean } | null = null;

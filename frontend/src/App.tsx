@@ -19,7 +19,6 @@ function SkipLink() {
 
 function BackendStatusBanner() {
   const backendOnline = useCarbonStore((state) => state.backendOnline);
-  const geminiEnabled = useCarbonStore((state) => state.geminiEnabled);
   const checkBackend = useCarbonStore((state) => state.checkBackend);
 
   if (backendOnline !== false) return null;

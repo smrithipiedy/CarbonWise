@@ -6,7 +6,9 @@ import { InsightsCache } from './cache';
 
 /** Sanitize structured data before embedding in LLM prompts. */
 function sanitizeForPrompt(data: unknown): string {
-  return JSON.stringify(data).replace(/[\u0000-\u001F\u007F]/g, '');
+  const text = JSON.stringify(data);
+  // eslint-disable-next-line no-control-regex
+  return text.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
 }
 
 export interface AIInsightResponse {
@@ -20,7 +22,7 @@ export interface AIInsightResponse {
 }
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY || '');
-const AI_MODELS = ['gemini-2.5-flash', 'gemini-3.1-flash'];
+const AI_MODELS = ['gemini-2.5-flash', 'gemini-3.1-flash-lite'];
 const insightsCache = new InsightsCache<AIInsightResponse>();
 
 /**

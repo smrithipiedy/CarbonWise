@@ -76,7 +76,7 @@ export default function InsightsPanel({
   const recommendations = insights.recommendations ?? [];
 
   return (
-    <section className="card p-6 h-full flex flex-col animate-fade-in-up" aria-labelledby="ins-title">
+    <section className="card p-6 h-full flex flex-col animate-fade-in-up" aria-labelledby="ins-title" role="status">
       <div className="flex items-center justify-between mb-4 shrink-0">
         <div className="flex items-center gap-2">
           <span className="text-lg" aria-hidden="true">💡</span>

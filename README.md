@@ -2,7 +2,7 @@
 
 A web application that helps individuals understand, track, and reduce their personal carbon footprint through simple inputs and personalized, AI-generated insights.
 
-Built as a single, accessible full-stack web application: a **Node.js / Express / TypeScript** backend and a **React + TypeScript** frontend, using **Google Gemini (Vertex AI)** for personalized advice and **Firestore** for tracking, deployed to Google Cloud Run as one container.
+Built as a single, accessible full-stack web application: a **Node.js / Express / TypeScript** backend and a **React + TypeScript** frontend, using the **Google Generative AI SDK (Gemini)** for personalized advice and **Firestore** for cloud persistence, deployed to Google Cloud Run as one container.
 
 ---
 
@@ -12,12 +12,14 @@ This project was built and hardened to meet enterprise production standards acro
 
 ### 1. Code Quality
 - **State Management**: Refactored massive `useState` monoliths into highly performant, isolated controllers using `react-hook-form`.
-- **Validation**: Absolute zero-trust data handling. All inputs and API payloads are strictly typed and validated using `zod` schemas.
+- **Validation**: Absolute zero-trust data handling. All inputs and API payloads are strictly typed and validated against shared `zod` schemas — a single source of truth used by both the frontend form and backend routes.
 - **Architecture**: Clean, modular separation of concerns. Global state is managed via `Zustand`, while math logic, API routing, and components exist in strict isolation.
+- **Linting**: Full ESLint coverage across both frontend (`typescript-eslint` + `react-hooks`) and backend (`typescript-eslint`), enforced in CI on every push.
 
 ### 2. Security
 - **API Hardening**: Locked down with `helmet` for HTTP security headers and `express-rate-limit` to prevent abuse.
-- **Secrets Management**: Cloud Run uses Google Secret Manager via IAM bindings for zero-knowledge deployment (no keys in code).
+- **Content-Type Enforcement**: All mutation endpoints reject non-JSON payloads with `415 Unsupported Media Type`.
+- **Secrets Management**: Cloud Run uses environment variables for the `GEMINI_API_KEY`. Firestore authenticates via Google Cloud Application Default Credentials (ADC).
 - **Graceful Degradation**: Built to never crash. If the Gemini API hits a rate limit, the backend dynamically tries multiple AI models before gracefully failing over to a local offline deterministic rule engine.
 
 ### 3. Efficiency
@@ -26,14 +28,16 @@ This project was built and hardened to meet enterprise production standards acro
 - **Payload Compression**: Enabled gzip compression middleware on the Express server to minimize bandwidth.
 
 ### 4. Testing
-- **Comprehensive Coverage**: Enforced strict `>90%` code coverage limits using `@vitest/coverage-v8`.
+- **Comprehensive Coverage**: Enforced strict `>90%` code coverage thresholds via `@vitest/coverage-v8` in the frontend test suite, run with `--coverage` in CI.
 - **DOM Integration Tests**: Configured `jsdom` and `@testing-library/react` to test how the UI actually renders and responds to user interaction (clicking, typing), not just logic validation.
-- **Automated CI/CD**: Fully equipped with GitHub Actions (`ci.yml`) to enforce build, lint, and test checks on every pull request.
+- **Backend Integration Tests**: Express route tests spin up an ephemeral server to validate real HTTP request/response cycles against all endpoints.
+- **Automated CI/CD**: Fully equipped with GitHub Actions (`ci.yml`) to enforce build, lint, and test checks on every push and pull request.
 
 ### 5. Accessibility
-- **ARIA & Screen Readers**: Meticulously mapped form `<label>` items to `<input>` IDs and bound validation errors using `aria-describedby` for perfect screen reader announcements.
+- **ARIA & Screen Readers**: Every form `<label>` is bound to its `<input>` via `htmlFor` / `id`. Validation errors are linked using `aria-describedby` and `aria-invalid` for precise screen reader announcements.
 - **Keyboard Navigation**: Implemented focus management and an accessible `<SkipLink />` for power users to bypass navigation.
 - **WCAG AA+**: Enforced strict color contrast ratios and scalable typography across all UI badges and interactive elements.
+- **Reduced Motion**: All animations are disabled when the user's system preference is `prefers-reduced-motion: reduce`.
 
 ---
 
@@ -63,7 +67,7 @@ The "logical decision making based on user context" shows up in two critical pla
 2. **Resilient AI Degradation**: Gemini produces the richest advice, but if it hits a quota limit or hallucination threshold, the platform dynamically fails over across multiple AI models before hitting a deterministic rule engine.
 
 ### Emission model
-Footprint figures use published emission factors (UK DEFRA 2023, US EPA, IPCC) documented inline in `backend/src/carbon/factors.ts`.
+Footprint figures use published emission factors (UK DEFRA 2023, US EPA, IPCC) documented inline in `shared/factors.ts`.
 
 ---
 
@@ -78,11 +82,11 @@ Browser (React + TS, Vite)              Cloud Run (single container)
                                           ├─ GET  /api/entries/:id history
                                           └─ GET  /  (+ assets)   serves built SPA
                                               │
-                                              ├─► Vertex AI (Gemini)  via ADC
+                                              ├─► Google Generative AI (Gemini)  via API Key
                                               └─► Firestore (Native)  via ADC
 ```
 
-One container serves both the API and the static SPA (no CORS in production). Authentication to Google services uses Application Default Credentials.
+One container serves both the API and the static SPA (no CORS in production). Firestore authenticates via Application Default Credentials on Cloud Run; the Gemini SDK authenticates via `GEMINI_API_KEY`.
 
 ---
 
@@ -123,6 +127,11 @@ cd frontend && npm run dev
 
 ### 4. Run the Test Suite
 ```bash
+# Frontend (with coverage enforcement)
 cd frontend
 npm run test -- --coverage
+
+# Backend
+cd backend
+npm test
 ```

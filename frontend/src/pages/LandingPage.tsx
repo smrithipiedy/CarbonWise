@@ -1,38 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { useCarbonStore } from '../store/useCarbonStore';
+import { footprintInputSchema } from '@carbonwise/shared';
 import type { FootprintInputs } from '@carbonwise/shared';
+import { z } from 'zod';
 
-const formSchema = z.object({
-  transport: z.object({
-    car_km_per_week: z.number().min(0, 'Must be positive').default(0),
-    car_fuel_type: z.enum(['petrol', 'diesel', 'hybrid', 'electric']).default('petrol'),
-    motorcycle_km_per_week: z.number().min(0).default(0),
-    transit_km_per_week: z.number().min(0).default(0),
-    flights_short: z.number().min(0).default(0),
-    flights_long: z.number().min(0).default(0),
-  }),
-  home: z.object({
-    electricity_kwh_per_month: z.number().min(0).default(0),
-    natural_gas_kwh_per_month: z.number().min(0).default(0),
-    heating_oil_kwh_per_month: z.number().min(0).default(0),
-    lpg_kwh_per_month: z.number().min(0).default(0),
-    water_m3_per_month: z.number().min(0).default(0),
-    renewable_energy_pct: z.number().min(0).max(100).default(0),
-    household_size: z.number().min(1, 'At least 1 person required').default(1),
-  }),
-  diet: z.object({
-    type: z.enum(['heavy_meat', 'medium_meat', 'low_meat', 'pescatarian', 'vegetarian', 'vegan']).default('vegetarian'),
-  }),
-  consumption: z.object({
-    shopping_spend_usd_per_month: z.number().min(0).default(0),
-    waste_landfill_kg_per_week: z.number().min(0).default(0),
-    recycling_pct: z.number().min(0).max(100).default(0),
-  })
-});
-
+const formSchema = footprintInputSchema;
 type FormValues = z.infer<typeof formSchema>;
 
 export default function LandingPage() {
@@ -79,7 +53,7 @@ export default function LandingPage() {
               Know your impact. <br />
               <span className="gradient-text">Change the future.</span>
             </h1>
-            <p className="text-slate-650 text-base sm:text-lg leading-relaxed max-w-xl mb-8 animate-fade-in-up delay-100">
+            <p className="text-slate-600 text-base sm:text-lg leading-relaxed max-w-xl mb-8 animate-fade-in-up delay-100">
               Calculate your personal carbon footprint in minutes. Get AI-powered recommendations to reduce your environmental impact — backed by science.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 items-center justify-center animate-fade-in-up delay-200 w-full sm:w-auto">
@@ -103,7 +77,8 @@ export default function LandingPage() {
       {/* ═══════════════════════════════════════════════════════════
           HOW IT WORKS
          ═══════════════════════════════════════════════════════════ */}
-      <section id="how-it-works" className="max-w-6xl mx-auto px-6 py-16">
+      <section id="how-it-works" className="max-w-6xl mx-auto px-6 py-16" aria-labelledby="how-it-works-title">
+        <h2 id="how-it-works-title" className="sr-only">How it works</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
             { icon: '📝', step: '01', title: 'Enter your habits', desc: 'Tell us about your weekly transport, energy use, diet, and consumption patterns.' },
@@ -154,12 +129,12 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               <div>
                 <label htmlFor="car_km_per_week" className="text-[13px] font-semibold text-slate-700 block mb-1.5">Car distance per week (km)</label>
-                <input id="car_km_per_week" type="number" {...register('transport.car_km_per_week', { valueAsNumber: true })} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm focus:border-eco-500 focus:ring-2 focus:ring-eco-500/15" />
-                {errors.transport?.car_km_per_week && <p className="text-red-500 text-xs mt-1">{errors.transport.car_km_per_week.message}</p>}
+                <input id="car_km_per_week" type="number" {...register('transport.car_km_per_week', { valueAsNumber: true })} aria-invalid={!!errors.transport?.car_km_per_week} aria-describedby={errors.transport?.car_km_per_week ? 'car_km_error' : undefined} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm focus:border-eco-500 focus:ring-2 focus:ring-eco-500/15" />
+                {errors.transport?.car_km_per_week && <p id="car_km_error" className="text-red-500 text-xs mt-1" role="alert">{errors.transport.car_km_per_week.message}</p>}
               </div>
               <div>
-                <label className="text-[13px] font-semibold text-slate-700 block mb-1.5">Car fuel type</label>
-                <select {...register('transport.car_fuel_type')} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm focus:border-eco-500 focus:ring-2 focus:ring-eco-500/15 bg-white">
+                <label htmlFor="car_fuel_type" className="text-[13px] font-semibold text-slate-700 block mb-1.5">Car fuel type</label>
+                <select id="car_fuel_type" {...register('transport.car_fuel_type')} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm focus:border-eco-500 focus:ring-2 focus:ring-eco-500/15 bg-white">
                   <option value="petrol">Petrol</option>
                   <option value="diesel">Diesel</option>
                   <option value="hybrid">Hybrid</option>
@@ -167,20 +142,20 @@ export default function LandingPage() {
                 </select>
               </div>
               <div>
-                <label className="text-[13px] font-semibold text-slate-700 block mb-1.5">Motorcycle per week (km)</label>
-                <input type="number" {...register('transport.motorcycle_km_per_week', { valueAsNumber: true })} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm focus:border-eco-500 focus:ring-2 focus:ring-eco-500/15" />
+                <label htmlFor="motorcycle_km_per_week" className="text-[13px] font-semibold text-slate-700 block mb-1.5">Motorcycle per week (km)</label>
+                <input id="motorcycle_km_per_week" type="number" {...register('transport.motorcycle_km_per_week', { valueAsNumber: true })} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm focus:border-eco-500 focus:ring-2 focus:ring-eco-500/15" />
               </div>
               <div>
-                <label className="text-[13px] font-semibold text-slate-700 block mb-1.5">Public transit per week (km)</label>
-                <input type="number" {...register('transport.transit_km_per_week', { valueAsNumber: true })} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm focus:border-eco-500 focus:ring-2 focus:ring-eco-500/15" />
+                <label htmlFor="transit_km_per_week" className="text-[13px] font-semibold text-slate-700 block mb-1.5">Public transit per week (km)</label>
+                <input id="transit_km_per_week" type="number" {...register('transport.transit_km_per_week', { valueAsNumber: true })} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm focus:border-eco-500 focus:ring-2 focus:ring-eco-500/15" />
               </div>
               <div>
-                <label className="text-[13px] font-semibold text-slate-700 block mb-1.5">Short-haul flights / yr</label>
-                <input type="number" {...register('transport.flights_short', { valueAsNumber: true })} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm focus:border-eco-500 focus:ring-2 focus:ring-eco-500/15" />
+                <label htmlFor="flights_short" className="text-[13px] font-semibold text-slate-700 block mb-1.5">Short-haul flights / yr</label>
+                <input id="flights_short" type="number" {...register('transport.flights_short', { valueAsNumber: true })} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm focus:border-eco-500 focus:ring-2 focus:ring-eco-500/15" />
               </div>
               <div>
-                <label className="text-[13px] font-semibold text-slate-700 block mb-1.5">Long-haul flights / yr</label>
-                <input type="number" {...register('transport.flights_long', { valueAsNumber: true })} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm focus:border-eco-500 focus:ring-2 focus:ring-eco-500/15" />
+                <label htmlFor="flights_long" className="text-[13px] font-semibold text-slate-700 block mb-1.5">Long-haul flights / yr</label>
+                <input id="flights_long" type="number" {...register('transport.flights_long', { valueAsNumber: true })} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm focus:border-eco-500 focus:ring-2 focus:ring-eco-500/15" />
               </div>
             </div>
           </fieldset>
@@ -196,29 +171,29 @@ export default function LandingPage() {
                 <input id="electricity_kwh_per_month" type="number" {...register('home.electricity_kwh_per_month', { valueAsNumber: true })} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm" />
               </div>
               <div>
-                <label className="text-[13px] font-semibold text-slate-700 block mb-1.5">Natural gas per month (kWh)</label>
-                <input type="number" {...register('home.natural_gas_kwh_per_month', { valueAsNumber: true })} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm" />
+                <label htmlFor="natural_gas_kwh_per_month" className="text-[13px] font-semibold text-slate-700 block mb-1.5">Natural gas per month (kWh)</label>
+                <input id="natural_gas_kwh_per_month" type="number" {...register('home.natural_gas_kwh_per_month', { valueAsNumber: true })} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm" />
               </div>
               <div>
-                <label className="text-[13px] font-semibold text-slate-700 block mb-1.5">Heating oil per month (kWh)</label>
-                <input type="number" {...register('home.heating_oil_kwh_per_month', { valueAsNumber: true })} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm" />
+                <label htmlFor="heating_oil_kwh_per_month" className="text-[13px] font-semibold text-slate-700 block mb-1.5">Heating oil per month (kWh)</label>
+                <input id="heating_oil_kwh_per_month" type="number" {...register('home.heating_oil_kwh_per_month', { valueAsNumber: true })} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm" />
               </div>
               <div>
-                <label className="text-[13px] font-semibold text-slate-700 block mb-1.5">LPG / Propane per month (kWh)</label>
-                <input type="number" {...register('home.lpg_kwh_per_month', { valueAsNumber: true })} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm" />
+                <label htmlFor="lpg_kwh_per_month" className="text-[13px] font-semibold text-slate-700 block mb-1.5">LPG / Propane per month (kWh)</label>
+                <input id="lpg_kwh_per_month" type="number" {...register('home.lpg_kwh_per_month', { valueAsNumber: true })} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm" />
               </div>
               <div>
-                <label className="text-[13px] font-semibold text-slate-700 block mb-1.5">Water usage per month (m³)</label>
-                <input type="number" {...register('home.water_m3_per_month', { valueAsNumber: true })} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm" />
+                <label htmlFor="water_m3_per_month" className="text-[13px] font-semibold text-slate-700 block mb-1.5">Water usage per month (m³)</label>
+                <input id="water_m3_per_month" type="number" {...register('home.water_m3_per_month', { valueAsNumber: true })} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm" />
               </div>
               <div>
-                <label className="text-[13px] font-semibold text-slate-700 block mb-1.5">Renewable energy (%)</label>
-                <input type="number" {...register('home.renewable_energy_pct', { valueAsNumber: true })} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm" />
+                <label htmlFor="renewable_energy_pct" className="text-[13px] font-semibold text-slate-700 block mb-1.5">Renewable energy (%)</label>
+                <input id="renewable_energy_pct" type="number" {...register('home.renewable_energy_pct', { valueAsNumber: true })} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm" />
               </div>
               <div>
-                <label className="text-[13px] font-semibold text-slate-700 block mb-1.5">People in household</label>
-                <input type="number" {...register('home.household_size', { valueAsNumber: true })} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm" />
-                {errors.home?.household_size && <p className="text-red-500 text-xs mt-1">{errors.home.household_size.message}</p>}
+                <label htmlFor="household_size" className="text-[13px] font-semibold text-slate-700 block mb-1.5">People in household</label>
+                <input id="household_size" type="number" {...register('home.household_size', { valueAsNumber: true })} aria-invalid={!!errors.home?.household_size} aria-describedby={errors.home?.household_size ? 'household_size_error' : undefined} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm" />
+                {errors.home?.household_size && <p id="household_size_error" className="text-red-500 text-xs mt-1" role="alert">{errors.home.household_size.message}</p>}
               </div>
             </div>
           </fieldset>
@@ -241,16 +216,16 @@ export default function LandingPage() {
                 </select>
               </div>
               <div>
-                <label className="text-[13px] font-semibold text-slate-700 block mb-1.5">Goods spending / month (USD)</label>
-                <input type="number" {...register('consumption.shopping_spend_usd_per_month', { valueAsNumber: true })} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm" />
+                <label htmlFor="shopping_spend_usd_per_month" className="text-[13px] font-semibold text-slate-700 block mb-1.5">Goods spending / month (USD)</label>
+                <input id="shopping_spend_usd_per_month" type="number" {...register('consumption.shopping_spend_usd_per_month', { valueAsNumber: true })} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm" />
               </div>
               <div>
-                <label className="text-[13px] font-semibold text-slate-700 block mb-1.5">Landfill waste / week (kg)</label>
-                <input type="number" {...register('consumption.waste_landfill_kg_per_week', { valueAsNumber: true })} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm" />
+                <label htmlFor="waste_landfill_kg_per_week" className="text-[13px] font-semibold text-slate-700 block mb-1.5">Landfill waste / week (kg)</label>
+                <input id="waste_landfill_kg_per_week" type="number" {...register('consumption.waste_landfill_kg_per_week', { valueAsNumber: true })} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm" />
               </div>
               <div>
-                <label className="text-[13px] font-semibold text-slate-700 block mb-1.5">Recycling / composting (%)</label>
-                <input type="number" {...register('consumption.recycling_pct', { valueAsNumber: true })} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm" />
+                <label htmlFor="recycling_pct" className="text-[13px] font-semibold text-slate-700 block mb-1.5">Recycling / composting (%)</label>
+                <input id="recycling_pct" type="number" {...register('consumption.recycling_pct', { valueAsNumber: true })} className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm" />
               </div>
             </div>
           </fieldset>

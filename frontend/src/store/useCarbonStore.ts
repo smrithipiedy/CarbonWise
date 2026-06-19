@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { calculateFootprint } from '@carbonwise/shared';
+import { calculateFootprint, PARIS_SUSTAINABLE_ANNUAL_TARGET, GLOBAL_AVERAGE_ANNUAL, footprintInputSchema } from '@carbonwise/shared';
+import { z } from 'zod';
 import {
   getInsights,
   saveSnapshot,
@@ -32,10 +33,44 @@ interface CarbonStoreState {
   checkBackend: () => Promise<boolean>;
 }
 
+const breakdownSchema = z.record(z.string(), z.number());
+const summarySchema = z.object({
+  breakdown: breakdownSchema,
+  totalEmission: z.number(),
+  highestCategory: z.string(),
+  targets: z.object({
+    parisSustainableTarget: z.number(),
+    globalAverage: z.number(),
+  })
+});
+
+const insightActionSchema = z.object({
+  category: z.string(),
+  action: z.string(),
+  estimated_annual_savings_kg: z.number()
+});
+
+const insightsSchema = z.object({
+  summary: z.string(),
+  recommendations: z.array(insightActionSchema),
+  source: z.enum(['gemini', 'rules'])
+});
+
+const historyEntrySchema = z.object({
+  id: z.string(),
+  deviceId: z.string(),
+  breakdown: breakdownSchema,
+  totalEmission: z.number(),
+  date: z.string(),
+  inputs: footprintInputSchema.optional()
+});
+
 const getInitialSummary = (): FootprintResponse | null => {
   try {
     const data = localStorage.getItem('carbon_summary');
-    return data ? JSON.parse(data) : null;
+    if (!data) return null;
+    const parsed = summarySchema.safeParse(JSON.parse(data));
+    return parsed.success ? (parsed.data as FootprintResponse) : null;
   } catch {
     return null;
   }
@@ -44,7 +79,9 @@ const getInitialSummary = (): FootprintResponse | null => {
 const getInitialInsights = (): AIInsightResponse | null => {
   try {
     const data = localStorage.getItem('carbon_insights');
-    return data ? JSON.parse(data) : null;
+    if (!data) return null;
+    const parsed = insightsSchema.safeParse(JSON.parse(data));
+    return parsed.success ? (parsed.data as AIInsightResponse) : null;
   } catch {
     return null;
   }
@@ -53,7 +90,9 @@ const getInitialInsights = (): AIInsightResponse | null => {
 const getInitialHistory = (): HistoryEntry[] => {
   try {
     const data = localStorage.getItem('carbon_history');
-    return data ? JSON.parse(data) : [];
+    if (!data) return [];
+    const parsed = z.array(historyEntrySchema).safeParse(JSON.parse(data));
+    return parsed.success ? (parsed.data as HistoryEntry[]) : [];
   } catch {
     return [];
   }
@@ -73,6 +112,16 @@ function isNetworkError(error: unknown): boolean {
     return code === 'ECONNREFUSED' || code === 'ERR_NETWORK' || code === 'ENOTFOUND';
   }
   return false;
+}
+
+function getErrorMessage(error: unknown, defaultMessage: string): string {
+  if (isNetworkError(error)) {
+    return 'Cannot reach the AI server. Make sure the backend is running on port 5000.';
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return defaultMessage;
 }
 
 async function fetchInsightsFromBackend(
@@ -96,6 +145,9 @@ export const useCarbonStore = create<CarbonStoreState>((set, get) => ({
   hasCalculatedThisSession: !!getInitialSummary(),
   selectedEntryId: getInitialSelectedEntryId(),
 
+  /**
+   * Checks the backend health to determine if Gemini AI is available.
+   */
   checkBackend: async () => {
     try {
       const res = await checkHealth();
@@ -114,6 +166,9 @@ export const useCarbonStore = create<CarbonStoreState>((set, get) => ({
     }
   },
 
+  /**
+   * Calculates carbon footprint, updates state/local storage, and triggers AI insights generation.
+   */
   calculate: async (inputs: FootprintInputs) => {
     set({ error: null, saved: false, hasCalculatedThisSession: true, selectedEntryId: null, insightsError: null });
     localStorage.removeItem('carbon_selected_entry_id');
@@ -144,16 +199,16 @@ export const useCarbonStore = create<CarbonStoreState>((set, get) => ({
         localStorage.setItem('carbon_insights', JSON.stringify(insightsData));
         set({ insights: insightsData, insightsLoading: false, insightsError: null });
       } catch (e) {
-        const message = isNetworkError(e)
-          ? 'Cannot reach the AI server. Make sure the backend is running on port 5000.'
-          : 'Failed to load AI insights. Please try again.';
-        set({ insightsLoading: false, insightsError: message });
+        set({ insightsLoading: false, insightsError: getErrorMessage(e, 'Failed to load AI insights. Please try again.') });
       }
     })();
 
     return true;
   },
 
+  /**
+   * Retries fetching AI insights for the current footprint.
+   */
   retryInsights: async () => {
     const summary = get().summary;
     if (!summary) return;
@@ -177,13 +232,13 @@ export const useCarbonStore = create<CarbonStoreState>((set, get) => ({
       localStorage.setItem('carbon_insights', JSON.stringify(insightsData));
       set({ insights: insightsData, insightsLoading: false, insightsError: null });
     } catch (e) {
-      const message = isNetworkError(e)
-        ? 'Cannot reach the AI server. Make sure the backend is running on port 5000.'
-        : 'Failed to load AI insights. Please try again.';
-      set({ insightsLoading: false, insightsError: message });
+      set({ insightsLoading: false, insightsError: getErrorMessage(e, 'Failed to load AI insights. Please try again.') });
     }
   },
 
+  /**
+   * Saves the current footprint to local history and optionally syncs with the backend.
+   */
   saveToHistory: async () => {
     const summary = get().summary;
     if (!summary || get().saved) return;
@@ -218,6 +273,9 @@ export const useCarbonStore = create<CarbonStoreState>((set, get) => ({
     }
   },
 
+  /**
+   * Loads history from local storage and backend.
+   */
   loadHistory: async () => {
     const deviceId = getDeviceId();
     const localHistory = getInitialHistory();
@@ -248,6 +306,9 @@ export const useCarbonStore = create<CarbonStoreState>((set, get) => ({
     }
   },
 
+  /**
+   * Selects a history entry to view its details and insights.
+   */
   selectHistoryEntry: async (entry: HistoryEntry) => {
     set({
       insightsLoading: true,
@@ -265,8 +326,8 @@ export const useCarbonStore = create<CarbonStoreState>((set, get) => ({
       totalEmission: entry.totalEmission,
       highestCategory: Object.entries(entry.breakdown).reduce((a, b) => (b[1] > a[1] ? b : a))[0],
       targets: {
-        parisSustainableTarget: 2000,
-        globalAverage: 4800,
+        parisSustainableTarget: PARIS_SUSTAINABLE_ANNUAL_TARGET,
+        globalAverage: GLOBAL_AVERAGE_ANNUAL,
       },
     };
 
@@ -295,10 +356,7 @@ export const useCarbonStore = create<CarbonStoreState>((set, get) => ({
       localStorage.setItem('carbon_insights', JSON.stringify(insightsData));
       set({ insights: insightsData, insightsLoading: false, insightsError: null });
     } catch (e) {
-      const message = isNetworkError(e)
-        ? 'Cannot reach the AI server. Make sure the backend is running on port 5000.'
-        : 'Failed to load AI insights. Please try again.';
-      set({ insightsLoading: false, insightsError: message });
+      set({ insightsLoading: false, insightsError: getErrorMessage(e, 'Failed to load AI insights. Please try again.') });
     }
   },
 }));
