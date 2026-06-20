@@ -1,5 +1,5 @@
-﻿import { describe, it, vi } from 'vitest';
-import * as ReactDOMClient from 'react-dom/client';
+import { describe, it, vi } from 'vitest';
+
 
 vi.mock('react-dom/client', () => ({
   createRoot: vi.fn().mockReturnValue({ render: vi.fn() })
