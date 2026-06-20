@@ -6,7 +6,6 @@
     "test": "npm run test --prefix backend && npm run test --prefix frontend",
     "test:backend": "npm run test --prefix backend",
     "test:frontend": "npm run test --prefix frontend",
-    "lint": "npm run lint --prefix backend && npm run lint --prefix frontend",
     "build": "npm run build --prefix backend && npm run build --prefix frontend"
   },
   "devDependencies": {
@@ -42,7 +41,7 @@
     "y18n": "^5.0.8",
     "yargs": "^17.7.2",
     "yargs-parser": "^21.1.1",
-    "zod": "^4.4.3"
+    "zod": "^3.23.8"
   },
   "keywords": [],
   "author": "",
