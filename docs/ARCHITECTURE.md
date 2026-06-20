@@ -126,7 +126,7 @@ Emissions calculations are implemented in `shared/engine.ts` and divided into fo
 
 - The application uses the **Google Generative AI SDK** (`@google/generative-ai`) with `GEMINI_API_KEY` for authentication.
 - The primary model is **Gemini 2.5 Flash** with a low temperature of `0.2` for high consistency and logical adherence. Responses are constrained via a strict JSON schema.
-- If the primary model fails (quota, parsing, hallucination), the system automatically tries **Gemini 3.1 Flash** as a secondary model.
+- If the primary model fails (quota, parsing, hallucination), the system automatically tries **Gemini 3.1 Flash Lite** as a secondary model.
 - If all AI models fail, it transparently falls back to the local `runRuleEngine()` deterministic fallback.
 - The response payload is tagged with `source: 'gemini'` or `source: 'rules'` so the client can display the source transparently.
 - An in-memory LRU cache with configurable TTL (default: 30 min, max 200 entries) prevents redundant API calls for identical user profiles.

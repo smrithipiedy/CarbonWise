@@ -54,7 +54,7 @@ Carbon engine  ──►  per-category kg CO₂e  ──►  ranked by size
         ▼                                          ▼
 Comparison to targets                  Insights generator
                                          ├─ Gemini 2.5 Flash (Primary)
-                                         ├─ Gemini 3.1 Flash (Fallback)
+                                         ├─ Gemini 3.1 Flash Lite (Fallback)
                                          └─ Rule Engine (Final Fallback)
         │
         ▼

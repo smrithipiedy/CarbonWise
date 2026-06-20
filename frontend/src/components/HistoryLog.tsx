@@ -5,7 +5,6 @@ interface HistoryLogProps {
   history: HistoryEntry[];
   summary: FootprintResponse | null;
   selectedEntryId: string | null;
-  saveToHistory: () => void;
   selectHistoryEntry: (entry: HistoryEntry) => void;
 }
 
