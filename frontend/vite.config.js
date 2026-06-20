@@ -12,6 +12,9 @@ export default defineConfig({
     alias: {
       '@carbonwise/shared': path.resolve(__dirname, '../shared'),
     },
+    // Ensure dependencies imported by ../shared/ resolve through frontend/node_modules
+    // (critical for CI where only frontend/node_modules exists, not a root node_modules)
+    dedupe: ['zod'],
   },
   server: {
     port: 3000,
