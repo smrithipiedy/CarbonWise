@@ -3,7 +3,7 @@ import { calculateFootprint } from '../carbon/engine';
 import { generateInsights } from '../insights/gemini';
 import { dbRepository } from '../database';
 import { randomUUID } from 'crypto';
-import { USE_GEMINI } from '../config';
+import { USE_GEMINI, GEMINI_API_KEY } from '../config';
 import { safeErrorMessage } from '../utils/errors';
 import { insightsRateLimiter, apiRateLimiter } from '../middleware/rateLimiter';
 import {
@@ -18,17 +18,26 @@ const router = Router();
 
 router.use(apiRateLimiter);
 
+/**
+ * GET /health
+ * @description Health check endpoint for the API. Returns system status and Gemini integration state.
+ */
 router.get('/health', (_req: Request, res: Response) => {
+  const geminiActive = USE_GEMINI && Boolean(GEMINI_API_KEY);
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
     gemini: {
-      enabled: USE_GEMINI,
-      model: USE_GEMINI ? 'gemini-2.5-flash' : null,
+      enabled: geminiActive,
+      model: geminiActive ? 'gemini-2.5-flash' : null,
     },
   });
 });
 
+/**
+ * POST /calculate
+ * @description Calculates the user's carbon footprint based on provided inputs.
+ */
 router.post('/calculate', (req: Request, res: Response) => {
   const parsed = footprintInputSchema.safeParse(req.body);
 
@@ -48,6 +57,10 @@ router.post('/calculate', (req: Request, res: Response) => {
   }
 });
 
+/**
+ * POST /insights
+ * @description Generates AI or rule-based insights for the given carbon footprint breakdown.
+ */
 router.post('/insights', insightsRateLimiter, async (req: Request, res: Response) => {
   const parsed = insightsRequestSchema.safeParse(req.body);
 
@@ -68,6 +81,10 @@ router.post('/insights', insightsRateLimiter, async (req: Request, res: Response
   }
 });
 
+/**
+ * POST /entries
+ * @description Saves a new carbon footprint entry snapshot for a specific device.
+ */
 router.post('/entries', async (req: Request, res: Response) => {
   const parsed = saveEntrySchema.safeParse(req.body);
 
@@ -98,6 +115,10 @@ router.post('/entries', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * GET /entries/:device_id
+ * @description Retrieves all historical carbon footprint entries for a given device ID.
+ */
 router.get('/entries/:device_id', async (req: Request, res: Response) => {
   const parsed = deviceIdParamSchema.safeParse(req.params.device_id);
   if (!parsed.success) {
@@ -113,6 +134,10 @@ router.get('/entries/:device_id', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * DELETE /entries/:device_id
+ * @description Deletes all historical carbon footprint entries for a given device ID.
+ */
 router.delete('/entries/:device_id', async (req: Request, res: Response) => {
   const parsed = deviceIdParamSchema.safeParse(req.params.device_id);
   if (!parsed.success) {
@@ -128,6 +153,10 @@ router.delete('/entries/:device_id', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * DELETE /entries/:device_id/:entry_id
+ * @description Deletes a single specific carbon footprint entry for a given device ID.
+ */
 router.delete('/entries/:device_id/:entry_id', async (req: Request, res: Response) => {
   const deviceParsed = deviceIdParamSchema.safeParse(req.params.device_id);
   const entryParsed = entryIdParamSchema.safeParse(req.params.entry_id);

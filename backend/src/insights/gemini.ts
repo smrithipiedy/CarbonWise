@@ -1,8 +1,18 @@
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
+import { z } from 'zod';
 import { USE_GEMINI, GEMINI_API_KEY } from '../config';
 import { runRuleEngine } from './ruleEngine';
 import type { FootprintInputs } from '../carbon/engine';
 import { InsightsCache } from './cache';
+
+const aiInsightSchema = z.object({
+  summary: z.string(),
+  recommendations: z.array(z.object({
+    category: z.enum(['transport', 'home', 'diet', 'consumption']),
+    action: z.string(),
+    estimated_annual_savings_kg: z.number().int(),
+  })).min(4).max(6),
+});
 
 /** Sanitize structured data before embedding in LLM prompts. */
 function sanitizeForPrompt(data: unknown): string {
@@ -102,24 +112,33 @@ export async function generateInsights(breakdown: Record<string, number>, inputs
         }
       });
 
-      const result = await model.generateContent(prompt);
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Gemini API timeout')), 10000)
+      );
+
+      const result = await Promise.race([
+        model.generateContent(prompt),
+        timeoutPromise
+      ]);
+
       const responseText = result.response.text();
       
       let parsed: AIInsightResponse;
       try {
-        parsed = JSON.parse(responseText);
-        parsed.source = 'gemini';
+        const rawJson = JSON.parse(responseText);
+        const validation = aiInsightSchema.safeParse(rawJson);
+        
+        if (!validation.success) {
+          console.warn(`⚠️ ${modelName} returned invalid schema. Skipping to next model:`, validation.error);
+          lastError = new Error('Schema validation failed');
+          continue;
+        }
+
+        parsed = { ...validation.data, source: 'gemini' } as AIInsightResponse;
       } catch (parseError) {
         console.warn(`⚠️ Failed to parse JSON from ${modelName}, skipping to next model:`, parseError);
         lastError = parseError;
         continue;
-      }
-
-      // Fallback if AI hallucinates fewer than 4 or more than 6 recommendations
-      if (!parsed.recommendations || parsed.recommendations.length < 4 || parsed.recommendations.length > 6) {
-          console.warn(`⚠️ ${modelName} returned ${parsed.recommendations?.length} recommendations (expected 4-6). Skipping to next model.`);
-          lastError = new Error('Hallucinated recommendation count');
-          continue;
       }
 
       insightsCache.set(cacheKey, parsed);

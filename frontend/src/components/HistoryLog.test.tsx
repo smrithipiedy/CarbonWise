@@ -1,4 +1,4 @@
-﻿import { render } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { describe, it, vi } from 'vitest';
 import HistoryLog from './HistoryLog';
 

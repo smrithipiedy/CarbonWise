@@ -65,6 +65,7 @@ const historyEntrySchema = z.object({
   inputs: footprintInputSchema.optional()
 });
 
+/** Retrieves the initial summary from local storage safely. */
 const getInitialSummary = (): FootprintResponse | null => {
   try {
     const data = localStorage.getItem('carbon_summary');
@@ -76,6 +77,7 @@ const getInitialSummary = (): FootprintResponse | null => {
   }
 };
 
+/** Retrieves the initial AI insights from local storage safely. */
 const getInitialInsights = (): AIInsightResponse | null => {
   try {
     const data = localStorage.getItem('carbon_insights');
@@ -87,6 +89,7 @@ const getInitialInsights = (): AIInsightResponse | null => {
   }
 };
 
+/** Retrieves the initial history from local storage safely. */
 const getInitialHistory = (): HistoryEntry[] => {
   try {
     const data = localStorage.getItem('carbon_history');
@@ -98,6 +101,7 @@ const getInitialHistory = (): HistoryEntry[] => {
   }
 };
 
+/** Retrieves the initially selected entry ID from local storage. */
 const getInitialSelectedEntryId = (): string | null => {
   try {
     return localStorage.getItem('carbon_selected_entry_id');
@@ -106,6 +110,7 @@ const getInitialSelectedEntryId = (): string | null => {
   }
 };
 
+/** Checks if the given error is a network connectivity error. */
 function isNetworkError(error: unknown): boolean {
   if (error && typeof error === 'object' && 'code' in error) {
     const code = (error as { code?: string }).code;
@@ -114,6 +119,7 @@ function isNetworkError(error: unknown): boolean {
   return false;
 }
 
+/** Generates a safe error message for the user based on the error type. */
 function getErrorMessage(error: unknown, defaultMessage: string): string {
   if (isNetworkError(error)) {
     return 'Cannot reach the AI server. Make sure the backend is running on port 5000.';
@@ -124,6 +130,9 @@ function getErrorMessage(error: unknown, defaultMessage: string): string {
   return defaultMessage;
 }
 
+/**
+ * Fetches AI insights from the backend for a given footprint.
+ */
 async function fetchInsightsFromBackend(
   breakdown: Record<string, number>,
   inputs: FootprintInputs

@@ -15,6 +15,15 @@ export interface Entry {
 
 const LOCAL_DB_PATH = path.join(process.cwd(), 'local_db.json');
 let inMemoryEntries: Entry[] = [];
+let localDBLoaded = false;
+
+/**
+ * Checks if Google Cloud Firestore is configured and active.
+ * @returns {boolean} True if Firestore should be used, false otherwise.
+ */
+function isFirestoreActive(): boolean {
+  return USE_FIRESTORE && admin.apps.length > 0;
+}
 
 if (USE_FIRESTORE) {
   try {
@@ -31,38 +40,54 @@ if (USE_FIRESTORE) {
   console.log('🟢 Offline Mode: Initializing local file storage');
 }
 
-// Load initial data
-if (!USE_FIRESTORE || admin.apps.length === 0) {
+/**
+ * Ensures the local JSON database file is loaded into memory.
+ * Does nothing if Firestore is active or if already loaded.
+ */
+async function ensureLocalDBLoaded() {
+  if (isFirestoreActive() || localDBLoaded) return;
   try {
-    if (fs.existsSync(LOCAL_DB_PATH)) {
-      const data = fs.readFileSync(LOCAL_DB_PATH, 'utf-8');
-      inMemoryEntries = JSON.parse(data);
+    const data = await fs.promises.readFile(LOCAL_DB_PATH, 'utf-8');
+    inMemoryEntries = JSON.parse(data);
+  } catch (e: unknown) {
+    if (e && typeof e === 'object' && 'code' in e && (e as { code?: string }).code !== 'ENOENT') {
+      console.warn('⚠️ Failed to load local db:', e);
     }
-  } catch (e) {
-    console.warn('⚠️ Failed to load local db:', e);
   }
+  localDBLoaded = true;
 }
 
-function saveLocalDB() {
-  try {
-    fs.writeFileSync(LOCAL_DB_PATH, JSON.stringify(inMemoryEntries, null, 2));
-  } catch (e) {
-    console.error('❌ Failed to save local db:', e);
-  }
+/**
+ * Atomically saves the in-memory local database to the JSON file.
+ */
+async function saveLocalDB() {
+  const tmpPath = `${LOCAL_DB_PATH}.tmp`;
+  await fs.promises.writeFile(tmpPath, JSON.stringify(inMemoryEntries, null, 2));
+  await fs.promises.rename(tmpPath, LOCAL_DB_PATH);
 }
 
 export const dbRepository = {
+  /**
+   * Saves a single footprint entry to either Firestore or the local JSON file.
+   * @param entry The footprint entry to save.
+   */
   async saveEntry(entry: Entry): Promise<void> {
-    if (USE_FIRESTORE && admin.apps.length > 0) {
+    if (isFirestoreActive()) {
       await admin.firestore().collection('entries').doc(entry.id).set(entry);
     } else {
+      await ensureLocalDBLoaded();
       inMemoryEntries.push(entry);
-      saveLocalDB();
+      await saveLocalDB();
     }
   },
 
+  /**
+   * Retrieves all footprint entries for a specific device.
+   * @param deviceId The unique device identifier.
+   * @returns An array of entries sorted by date descending.
+   */
   async getEntriesByDevice(deviceId: string): Promise<Entry[]> {
-    if (USE_FIRESTORE && admin.apps.length > 0) {
+    if (isFirestoreActive()) {
       const snapshot = await admin
         .firestore()
         .collection('entries')
@@ -73,13 +98,19 @@ export const dbRepository = {
       return entries.sort((a, b) => b.date.localeCompare(a.date));
     }
 
+    await ensureLocalDBLoaded();
     return [...inMemoryEntries]
       .filter((e) => e.deviceId === deviceId)
       .sort((a, b) => b.date.localeCompare(a.date));
   },
 
+  /**
+   * Deletes all footprint entries for a specific device.
+   * @param deviceId The unique device identifier.
+   * @returns The number of entries deleted.
+   */
   async deleteEntriesByDevice(deviceId: string): Promise<number> {
-    if (USE_FIRESTORE && admin.apps.length > 0) {
+    if (isFirestoreActive()) {
       const snapshot = await admin
         .firestore()
         .collection('entries')
@@ -94,6 +125,7 @@ export const dbRepository = {
       return snapshot.size;
     }
 
+    await ensureLocalDBLoaded();
     let count = 0;
     for (let i = inMemoryEntries.length - 1; i >= 0; i--) {
       if (inMemoryEntries[i].deviceId === deviceId) {
@@ -101,12 +133,18 @@ export const dbRepository = {
         count++;
       }
     }
-    if (count > 0) saveLocalDB();
+    if (count > 0) await saveLocalDB();
     return count;
   },
 
+  /**
+   * Deletes a single footprint entry by ID for a specific device.
+   * @param deviceId The unique device identifier.
+   * @param entryId The unique entry identifier.
+   * @returns True if deleted successfully, false otherwise.
+   */
   async deleteSingleEntry(deviceId: string, entryId: string): Promise<boolean> {
-    if (USE_FIRESTORE && admin.apps.length > 0) {
+    if (isFirestoreActive()) {
       const docRef = admin.firestore().collection('entries').doc(entryId);
       const doc = await docRef.get();
       if (!doc.exists) return false;
@@ -118,10 +156,11 @@ export const dbRepository = {
       return true;
     }
 
+    await ensureLocalDBLoaded();
     const idx = inMemoryEntries.findIndex((e) => e.id === entryId && e.deviceId === deviceId);
     if (idx === -1) return false;
     inMemoryEntries.splice(idx, 1);
-    saveLocalDB();
+    await saveLocalDB();
     return true;
   },
 };

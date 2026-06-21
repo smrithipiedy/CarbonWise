@@ -1,4 +1,4 @@
-﻿import { render } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { describe, it } from 'vitest';
 import InsightsPanel from './InsightsPanel';
 

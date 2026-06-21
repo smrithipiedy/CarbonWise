@@ -31,6 +31,7 @@ export default function HistoryLog({
   const trendData = [...history]
     .reverse()
     .map((h) => ({
+      id: h.id,
       date: new Date(h.date).toLocaleDateString([], { month: 'short', day: 'numeric' }),
       emissions: Number((h.totalEmission / 1000).toFixed(2)),
     }));
@@ -98,7 +99,7 @@ export default function HistoryLog({
             </thead>
             <tbody>
               {trendData.map((row) => (
-                <tr key={row.date}>
+                <tr key={row.id}>
                   <td>{row.date}</td>
                   <td>{row.emissions}</td>
                 </tr>

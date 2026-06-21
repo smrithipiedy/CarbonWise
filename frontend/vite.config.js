@@ -27,11 +27,16 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json-summary'],
+      include: [
+        'src/services/api.ts',
+        'src/store/useCarbonStore.ts',
+        'src/lib/**/*.ts'
+      ],
       thresholds: {
-        lines: 80,
-        functions: 70,
-        branches: 60,
-        statements: 80
+        lines: 90,
+        functions: 90,
+        branches: 90,
+        statements: 90
       }
     }
   },

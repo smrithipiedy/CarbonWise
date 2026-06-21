@@ -84,8 +84,14 @@ export interface HealthResponse {
   };
 }
 
+/**
+ * Checks the health status of the backend API and AI integration.
+ */
 export const checkHealth = () => api.get<HealthResponse>('/health');
 
+/**
+ * Retrieves the existing device ID from local storage or generates a new UUID.
+ */
 export const getDeviceId = (): string => {
   let deviceId = localStorage.getItem('deviceId');
   if (!deviceId) {
@@ -95,21 +101,39 @@ export const getDeviceId = (): string => {
   return deviceId;
 };
 
+/**
+ * Sends footprint inputs to the backend to calculate emission breakdowns and totals.
+ */
 export const calculateFootprint = (data: FootprintInputs) =>
   api.post<FootprintResponse>('/calculate', data);
 
+/**
+ * Fetches personalized AI-generated insights based on emission breakdown and user inputs.
+ */
 export const getInsights = (breakdown: Record<string, number>, inputs: FootprintInputs) =>
   api.post<AIInsightResponse>('/insights', { breakdown, inputs });
 
+/**
+ * Saves a new carbon footprint snapshot entry to the cloud for historical tracking.
+ */
 export const saveSnapshot = (deviceId: string, breakdown: Record<string, number>, totalEmission: number, inputs: FootprintInputs) =>
   api.post<{ status: string; id: string }>('/entries', { deviceId, breakdown, totalEmission, inputs });
 
+/**
+ * Retrieves all historical footprint snapshots for a specific device.
+ */
 export const getHistory = (deviceId: string) =>
   api.get<HistoryEntry[]>(`/entries/${deviceId}`);
 
+/**
+ * Deletes all historical footprint snapshots for a specific device.
+ */
 export const clearHistory = (deviceId: string) =>
   api.delete<{ status: string; message: string }>(`/entries/${deviceId}`);
 
+/**
+ * Deletes a single historical footprint snapshot entry.
+ */
 export const deleteEntry = (deviceId: string, entryId: string) =>
   api.delete<{ status: string; message: string }>(`/entries/${deviceId}/${entryId}`);
 
